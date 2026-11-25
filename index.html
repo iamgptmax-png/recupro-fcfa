@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0F766E" />
+  <meta name="description" content="Créez des reçus professionnels en FCFA (Wave, Orange Money, MTN MoMo, Espèces) et suivez vos crédits clients sur WhatsApp en 10 secondes." />
+  <title>ReçuPro FCFA — Reçus WhatsApp & Carnet de Crédit</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-logo">R</div>
+      <div>
+        <h1 class="brand-title">ReçuPro <span class="badge-fcfa" id="headerCurrency">FCFA</span></h1>
+        <p class="brand-sub" id="headerShopName">Reçus WhatsApp & Carnet de Crédit</p>
+      </div>
+    </div>
+    <button class="pro-pill" id="btnHeaderPro" type="button">★ Pro</button>
+  </header>
+
+  <main class="app-main">
+    <!-- TAB 1: NOUVEAU REÇU -->
+    <section id="tab-receipt" class="tab-panel active">
+      <div class="card">
+        <div class="card-header">
+          <h2>Nouveau reçu</h2>
+          <span class="receipt-num-badge" id="displayReceiptNum">REC-2026-0001</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="clientName">Nom du client *</label>
+            <input type="text" id="clientName" placeholder="Ex : Aminata Koné" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="clientPhone">WhatsApp client</label>
+            <input type="tel" id="clientPhone" placeholder="Ex : 2250701020304" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="items-section">
+          <div class="section-label-row">
+            <label>Articles / Prestations</label>
+            <button type="button" class="btn-text" id="btnAddItem">+ Ajouter une ligne</button>
+          </div>
+          <div id="itemsList"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="deliveryFee">Livraison</label>
+            <input type="number" id="deliveryFee" min="0" step="100" value="0" />
+          </div>
+          <div class="form-group">
+            <label for="discountFee">Remise</label>
+            <input type="number" id="discountFee" min="0" step="100" value="0" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Mode de paiement</label>
+          <div class="chip-group" id="paymentMethodGroup">
+            <button type="button" class="chip active" data-val="Wave">Wave</button>
+            <button type="button" class="chip" data-val="Orange Money">Orange Money</button>
+            <button type="button" class="chip" data-val="MTN MoMo">MTN MoMo</button>
+            <button type="button" class="chip" data-val="Moov Money">Moov Money</button>
+            <button type="button" class="chip" data-val="Espèces">Espèces</button>
+            <button type="button" class="chip" data-val="Virement">Virement</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Statut du paiement</label>
+          <div class="status-segmented" id="paymentStatusGroup">
+            <button type="button" class="seg-btn active" data-status="PAYÉ">Payé</button>
+            <button type="button" class="seg-btn" data-status="ACOMPTE">Acompte</button>
+            <button type="button" class="seg-btn" data-status="CRÉDIT">À crédit</button>
+          </div>
+        </div>
+
+        <div class="form-group hidden" id="amountPaidWrapper">
+          <label for="amountPaid">Montant déjà versé (<span class="currency-unit">FCFA</span>)</label>
+          <input type="number" id="amountPaid" min="0" step="100" value="0" />
+          <p class="field-hint">Reste à payer : <strong id="remainingDisplay">0 FCFA</strong> (ajouté au Carnet de Crédit)</p>
+        </div>
+
+        <div class="form-group">
+          <label for="receiptNote">Note (optionnel)</label>
+          <input type="text" id="receiptNote" placeholder="Ex : Livraison Yopougon • Merci pour votre confiance" />
+        </div>
+
+        <div class="total-bar">
+          <span>Total net</span>
+          <strong id="liveTotal">0 FCFA</strong>
+        </div>
+      </div>
+
+      <!-- APERÇU DU REÇU -->
+      <div class="card preview-card">
+        <div class="card-header">
+          <h2>Aperçu du reçu</h2>
+          <span class="mini-tag" id="watermarkTag">Version gratuite</span>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas id="receiptCanvas" width="900" height="1200"></canvas>
+        </div>
+        <div class="action-grid">
+          <button type="button" class="btn btn-primary" id="btnShareWhatsApp">Partager sur WhatsApp</button>
+          <button type="button" class="btn btn-secondary" id="btnDownloadPng">Télécharger Image (PNG)</button>
+          <button type="button" class="btn btn-outline" id="btnSaveOnly">Enregistrer</button>
+          <button type="button" class="btn btn-outline" id="btnPrintPdf">Imprimer / PDF</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: CARNET DE CRÉDIT & HISTORIQUE -->
+    <section id="tab-ledger" class="tab-panel">
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-green">
+          <span class="kpi-label">Encaissé</span>
+          <strong class="kpi-val" id="kpiCollected">0 FCFA</strong>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <span class="kpi-label">À recouvrer</span>
+          <strong class="kpi-val" id="kpiPending">0 FCFA</strong>
+        </div>
+        <div class="kpi-card kpi-slate">
+          <span class="kpi-label">Reçus</span>
+          <strong class="kpi-val" id="kpiCount">0</strong>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="filter-bar">
+          <input type="search" id="searchLedger" placeholder="Rechercher un client ou n° de reçu..." />
+          <div class="chip-group" id="ledgerFilterGroup">
+            <button type="button" class="chip active" data-filter="ALL">Tous</button>
+            <button type="button" class="chip" data-filter="CREDIT">Crédits en cours</button>
+            <button type="button" class="chip" data-filter="PAID">Payés</button>
+          </div>
+        </div>
+        <div id="ledgerList" class="ledger-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: BOUTIQUE & PRO -->
+    <section id="tab-settings" class="tab-panel">
+      <div class="card pro-banner" id="proBanner">
+        <div class="pro-banner-top">
+          <span class="pro-badge-lg">ReçuPro PRO</span>
+          <strong class="pro-price">5 000 FCFA <small>paiement unique</small></strong>
+        </div>
+        <p class="pro-desc" id="proStatusText">Passez à la version Pro pour supprimer la mention « ReçuPro » sur vos reçus, ajouter le logo de votre boutique et sauvegarder vos données.</p>
+        <ul class="pro-perks">
+          <li>Zéro filigrane sur tous vos reçus PNG & PDF</li>
+          <li>Logo personnalisé de votre boutique sur chaque reçu</li>
+          <li>Sauvegarde et restauration complète de votre carnet</li>
+        </ul>
+        <div class="pro-actions" id="proUnlockBlock">
+          <a href="#payer-pro" id="btnBuyPro" class="btn btn-gold" target="_blank" rel="noopener">Activer Pro via Mobile Money (5 000 FCFA)</a>
+          <div class="license-row">
+            <input type="text" id="licenseKeyInput" placeholder="Déjà un code Pro ? Ex : RECUPRO-..." />
+            <button type="button" class="btn btn-secondary" id="btnActivateLicense">Valider</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Profil de ma boutique</h2>
+        </div>
+        <div class="form-group">
+          <label for="shopName">Nom de la boutique / entreprise</label>
+          <input type="text" id="shopName" placeholder="Ex : Boutique Éclat Abidjan" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="shopPhone">Téléphone / WhatsApp</label>
+            <input type="tel" id="shopPhone" placeholder="Ex : +225 07 00 00 00 00" />
+          </div>
+          <div class="form-group">
+            <label for="shopCurrency">Devise</label>
+            <select id="shopCurrency">
+              <option value="FCFA">FCFA (XOF / XAF)</option>
+              <option value="GNF">GNF (Franc guinéen)</option>
+              <option value="MAD">MAD (Dirham)</option>
+              <option value="TND">TND (Dinar)</option>
+              <option value="CDF">CDF (Franc congolais)</option>
+              <option value="€">EUR (€)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="shopAddress">Ville / Quartier</label>
+          <input type="text" id="shopAddress" placeholder="Ex : Cocody Angré, Abidjan" />
+        </div>
+        <div class="form-group">
+          <label for="shopMomo">Numéro Wave / Orange Money / MoMo (affiché dans les relances)</label>
+          <input type="text" id="shopMomo" placeholder="Ex : Wave / OM : 07 00 00 00 00" />
+        </div>
+        <div class="form-group">
+          <label for="shopLogoInput">Logo de la boutique <span class="pro-inline-tag">PRO</span></label>
+          <input type="file" id="shopLogoInput" accept="image/*" />
+          <p class="field-hint" id="logoHint">Disponible avec la version Pro.</p>
+        </div>
+        <button type="button" class="btn btn-primary full-width" id="btnSaveSettings">Enregistrer les paramètres</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Sauvegarde des données</h2>
+        </div>
+        <div class="action-grid">
+          <button type="button" class="btn btn-outline" id="btnExportJson">Exporter sauvegarde (.json)</button>
+          <label class="btn btn-outline file-btn">
+            Importer (.json)
+            <input type="file" id="btnImportJson" accept="application/json" hidden />
+          </label>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button type="button" class="nav-btn active" data-tab="tab-receipt">
+      <span class="nav-icon">🧾</span>
+      <span>Reçu</span>
+    </button>
+    <button type="button" class="nav-btn" data-tab="tab-ledger">
+      <span class="nav-icon">📒</span>
+      <span>Crédits</span>
+      <span class="nav-badge hidden" id="creditNavBadge">0</span>
+    </button>
+    <button type="button" class="nav-btn" data-tab="tab-settings">
+      <span class="nav-icon">🏪</span>
+      <span>Boutique</span>
+    </button>
+  </nav>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
